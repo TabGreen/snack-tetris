@@ -4,33 +4,48 @@ const h = 20;
 const w = 20;
 
 const Scale_blockSize = 0.8;//缩放比例
-function computeBlockSize(){
-    let x1 = w/h;
-    let x2 = window.innerWidth/window.innerHeight;
-    let block_realSize;
-    if(x1 > x2){
-        block_realSize = window.innerWidth*Scale_blockSize/w;
-    }else{
-        block_realSize = window.innerHeight*Scale_blockSize/h;
-    }
-    return block_realSize;
-}
-const block_realSize = computeBlockSize();//px
+var block_realSize;//px
 
-const borderWidth = 10;//px
+const Scale_borderWidth = 0.01;
+var borderWidth;//px
 const borderColor = '#099';
 
-const realWidth = w*block_realSize+borderWidth*2;
-const realHeight = h*block_realSize+borderWidth*2;
+var realWidth;
+var realHeight;
 
 const gridWidth = 1;//px
 const gridColor = '#888';
 const gridAlpha = 0.3;
 
     //除去边框的可用区域尺寸
-const canBeUsedWidth = realWidth - 2*borderWidth;
-const canBeUsedHeight = realHeight - 2*borderWidth;
+var canBeUsedWidth;
+var canBeUsedHeight;
 
+function setConstants(){
+    function computeBlockSize(){
+        let x1 = w/h;
+        let x2 = window.innerWidth/window.innerHeight;
+        let block_realSize;
+        if(x1 > x2){
+            block_realSize = window.innerWidth*Scale_blockSize/w;
+            borderWidth = window.innerWidth*Scale_borderWidth;
+        }else{
+            block_realSize = window.innerHeight*Scale_blockSize/h;
+            borderWidth = window.innerHeight*Scale_borderWidth;
+        }
+        return block_realSize;
+    }
+
+    block_realSize = computeBlockSize();//px
+
+    realWidth = w*block_realSize+borderWidth*2;
+    realHeight = h*block_realSize+borderWidth*2;
+
+    canBeUsedWidth = realWidth - 2*borderWidth;
+    canBeUsedHeight = realHeight - 2*borderWidth;
+}
+
+setConstants();//设置有关画布尺寸的常量
 
 const updateTime = 40;
 //cvs
@@ -52,7 +67,12 @@ function setCVSPos(){
 }
 setCVSSize();
 setCVSPos();
-window.addEventListener('resize',setCVSPos);
+window.addEventListener('resize',()=>{
+    setConstants();
+    setCVSSize();
+    drawAll();
+    setCVSPos();
+});
 
 //drawBG
 function drawBG(){
@@ -82,10 +102,14 @@ function render(){
     ctx.clearRect(0,0,realWidth,realHeight);
     ctx.drawImage(bufferEl,0,0);
 }
-//main update
-function update(){
+//draw all
+function drawAll(){
     buffer.clearRect(0,0,realWidth,realHeight);
     drawBG();
     render();
+}
+//main update
+function update(){
+    drawAll();
 }
 setInterval(update,updateTime);
