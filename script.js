@@ -78,8 +78,14 @@ function setElement(){
 //snack
     //constants
 const snackLength = 6;
-const snack_timeInterval_move = 100;//两次移动的时间间隔
-const snack_timeInterval_changeDirection = 1000;//两次改变方向的时间间隔
+const snack_timeInterval_move = 60;//两次移动的时间间隔
+
+const snack_timeInterval_changeDirection_max = 500;//两次改变方向的时间间隔
+var snack_timeInterval_changeDirection;
+function setDirChangeInterval(){
+    snack_timeInterval_changeDirection = Math.floor(Math.random()*snack_timeInterval_changeDirection_max);
+}
+setDirChangeInterval();
         //snack_blockColor
         const snack_blockColor1 = '#444';
         const snack_blockColor2 = '#666';
@@ -91,6 +97,10 @@ var snack_lastMove = Date.now();
 var snack_lastChangeDirection = Date.now();
 
 var snack_direction = 0;
+function randomDirection(){
+let d = Math.floor(Math.random()*4);
+if(d>=4){d=3;}snack_direction = d;}
+randomDirection();
 
 var lastDead;
 var dead_animation_duration = 300;
@@ -123,6 +133,8 @@ function drawSnack(){
         if(isDead){
             color.addColorStop(0,dead_blockColor1);
             color.addColorStop(1,dead_blockColor2);
+
+            buffer.globalAlpha = 0.8;
         }else{
             color.addColorStop(0,snack_blockColor1);
             color.addColorStop(1,snack_blockColor2);
@@ -131,6 +143,8 @@ function drawSnack(){
         buffer.fillRect(x*block_realSize + borderWidth,y*block_realSize + borderWidth,block_realSize,block_realSize);
         if(isDead){
             buffer.strokeStyle = dead_blockColor1;
+
+            buffer.globalAlpha = 1;
         }else{
             buffer.strokeStyle = snack_blockColor1;
         }
@@ -145,29 +159,29 @@ function drawSnack(){
     }}}
 }
     //move snack
-function moveSnack(){
-    function getHeadAndTailIndex(){
-        //最大的数字是头,最小的数字是尾
-        //找到最大的数字,最小的数字 的索引
-        let headIndex = [0,0];
-        let tailIndex = [0,0];
+function getHeadAndTailIndex(){
+    //最大的数字是头,最小的数字是尾
+    //找到最大的数字,最小的数字 的索引
+    let headIndex = [0,0];
+    let tailIndex = [0,0];
 
-        let snack_realLength = 0;
-        for(let i=0;i<h;i++){
-            for(let j=0;j<w;j++){
-                if(space[i][j] > 0){
-                    snack_realLength++;
-                    //必要的修正
-                    if(space[headIndex[0]][headIndex[1]] <= 0){headIndex[0]=i;headIndex[1]=j;}
-                    if(space[tailIndex[0]][tailIndex[1]] <= 0){tailIndex[0]=i;tailIndex[1]=j;}
-                    //更新头尾
-                    if(space[i][j] > space[headIndex[0]][headIndex[1]]){
-                        headIndex = [i,j];
-                    }else if(space[i][j] < space[tailIndex[0]][tailIndex[1]]){
-                        tailIndex = [i,j];
-        }}}}
-        return [headIndex,tailIndex,snack_realLength];
-    }
+    let snack_realLength = 0;
+    for(let i=0;i<h;i++){
+        for(let j=0;j<w;j++){
+            if(space[i][j] > 0){
+                snack_realLength++;
+                //必要的修正
+                if(space[headIndex[0]][headIndex[1]] <= 0){headIndex[0]=i;headIndex[1]=j;}
+                if(space[tailIndex[0]][tailIndex[1]] <= 0){tailIndex[0]=i;tailIndex[1]=j;}
+                //更新头尾
+                if(space[i][j] > space[headIndex[0]][headIndex[1]]){
+                    headIndex = [i,j];
+                }else if(space[i][j] < space[tailIndex[0]][tailIndex[1]]){
+                    tailIndex = [i,j];
+    }}}}
+    return [headIndex,tailIndex,snack_realLength];
+}
+function moveSnack(){
     if(Date.now() - snack_lastMove > snack_timeInterval_move){
         snack_lastMove = Date.now();
         let [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
@@ -227,6 +241,34 @@ function moveSnack(){
         }}}
         //重新设置蛇头
         randomSnackHead();
+        randomDirection();
+    }
+}
+//change direction
+function changeDirection(){
+    if(Date.now() - snack_lastChangeDirection > snack_timeInterval_changeDirection){
+        setDirChangeInterval();
+        snack_lastChangeDirection = Date.now();
+        [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
+        let canDir = [];
+        function canChange(_h,_w){
+            if(_h < 0 || _h >= h || _w < 0 || _w >= w
+            || space[_h][_w] !== 0){
+                return false;
+            }else{
+                return true;
+            }
+        }
+        if(canChange(headIndex[0]-1,headIndex[1])){canDir.push(0);}
+        if(canChange(headIndex[0],headIndex[1]+1)){canDir.push(1);}
+        if(canChange(headIndex[0]+1,headIndex[1])){canDir.push(2);}
+        if(canChange(headIndex[0],headIndex[1]-1)){canDir.push(3);}
+
+        if(canDir.length > 0){
+            let sdi = Math.floor(canDir.length*Math.random());
+            if(sdi >= canDir.length){sdi = canDir.length-1;}
+            snack_direction = canDir[sdi];
+        }
     }
 }
 //drawBG
@@ -284,8 +326,8 @@ if(lastDead){
     buffer.fillRect(realWidth - outerBorderWidth, 0, outerBorderWidth, realHeight); // 右
 
     // 绘制内边框
-    buffer.fillRect(gapWidth, gapWidth, realWidth - 2 * gapWidth, innerBorderWidth); // 上
-    buffer.fillRect(gapWidth, gapWidth, innerBorderWidth, realHeight - 2 * gapWidth); // 左
+    buffer.fillRect(outerBorderWidth+gapWidth, outerBorderWidth+gapWidth, realWidth - 2 * gapWidth, innerBorderWidth); // 上
+    buffer.fillRect(outerBorderWidth+gapWidth, outerBorderWidth+gapWidth, innerBorderWidth, realHeight - 2 * gapWidth); // 左
     buffer.fillRect(outerBorderWidth + gapWidth, realHeight - borderWidth, realWidth - borderWidth - outerBorderWidth - gapWidth +1, innerBorderWidth); // 下
     buffer.fillRect(realWidth - borderWidth, outerBorderWidth + gapWidth, innerBorderWidth, realHeight - borderWidth - outerBorderWidth - gapWidth+1); // 右
 }
@@ -299,13 +341,14 @@ function drawAll(){
     buffer.clearRect(0,0,realWidth,realHeight);
     drawBG();
     drawSnack();
-    moveSnack();
     drawBorder();
     render();
 }
 //main update
 function update(){
     setElement();
+    moveSnack();
+    changeDirection();
     drawAll();
 }
 setInterval(update,updateTime);
