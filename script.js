@@ -1,3 +1,4 @@
+//颜色统一使用16进制
 //constants
     //相对尺寸
 const h = 20;
@@ -8,12 +9,13 @@ var block_realSize;//px
 
 const Scale_borderWidth = 0.01;
 var borderWidth;//px
-const borderColor = '#099';
+const borderColor = '#9EA6C9';
 
 var realWidth;
 var realHeight;
 
-const gridWidth = 1;//px
+const Scale_gridWidth = 0.06;//相对于一个格子的尺寸
+var gridWidth;//px
 const gridColor = '#888';
 const gridAlpha = 0.3;
 
@@ -33,6 +35,7 @@ function setConstants(){
             block_realSize = window.innerHeight*Scale_blockSize/h;
             borderWidth = window.innerHeight*Scale_borderWidth;
         }
+        gridWidth = block_realSize*Scale_gridWidth;
         return block_realSize;
     }
 
@@ -78,21 +81,34 @@ function drawBG(){
         buffer.fillStyle = gridColor;
         buffer.globalAlpha = gridAlpha;
         for(let i=0;i<w;i++){
-            buffer.fillRect(i*block_realSize + borderWidth - gridWidth/2,borderWidth,gridWidth,realHeight);
+            buffer.fillRect(i*block_realSize + borderWidth - gridWidth/2,borderWidth,gridWidth,realHeight - 2*borderWidth);
         }
         for(let i=0;i<h;i++){
-            buffer.fillRect(borderWidth,i*block_realSize + borderWidth - gridWidth/2,realWidth,gridWidth);
+            buffer.fillRect(borderWidth,i*block_realSize + borderWidth - gridWidth/2,realWidth - 2*borderWidth,gridWidth);
         }
         buffer.globalAlpha = 1;
     }
     drawGrid();
 }
-function drawBorder(){
+function drawBorder() {
+    const Scale_width = [7, 3, 2]; // 外边框, 狭小的空白, 内边框的宽度比
+    const totalScale = Scale_width.reduce((a, b) => a + b, 0);
+    const outerBorderWidth = borderWidth * (Scale_width[0] / totalScale);
+    const innerBorderWidth = borderWidth * (Scale_width[2] / totalScale);
+    const gapWidth = borderWidth * (Scale_width[1] / totalScale);
+
+    // 绘制外边框
     buffer.fillStyle = borderColor;
-    buffer.fillRect(0,0,realWidth,borderWidth);
-    buffer.fillRect(0,0,borderWidth,realHeight);
-    buffer.fillRect(0,realHeight-borderWidth,realWidth,borderWidth);
-    buffer.fillRect(realWidth-borderWidth,0,borderWidth,realHeight);
+    buffer.fillRect(0, 0, realWidth, outerBorderWidth); // 上
+    buffer.fillRect(0, 0, outerBorderWidth, realHeight); // 左
+    buffer.fillRect(0, realHeight - outerBorderWidth, realWidth, outerBorderWidth); // 下
+    buffer.fillRect(realWidth - outerBorderWidth, 0, outerBorderWidth, realHeight); // 右
+
+    // 绘制内边框
+    buffer.fillRect(gapWidth, gapWidth, realWidth - 2 * gapWidth, innerBorderWidth); // 上
+    buffer.fillRect(gapWidth, gapWidth, innerBorderWidth, realHeight - 2 * gapWidth); // 左
+    buffer.fillRect(outerBorderWidth + gapWidth, realHeight - borderWidth, realWidth - borderWidth - outerBorderWidth - gapWidth +1, innerBorderWidth); // 下
+    buffer.fillRect(realWidth - borderWidth, outerBorderWidth + gapWidth, innerBorderWidth, realHeight - borderWidth - outerBorderWidth - gapWidth+1); // 右
 }
 //render
 function render(){
