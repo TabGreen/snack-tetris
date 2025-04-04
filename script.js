@@ -75,6 +75,159 @@ function setElement(){
     setCVSSize();
     setCVSPos();
 }
+//snack
+    //constants
+const snackLength = 6;
+const snack_timeInterval_move = 100;//两次移动的时间间隔
+const snack_timeInterval_changeDirection = 1000;//两次改变方向的时间间隔
+        //snack_blockColor
+        const snack_blockColor1 = '#444';
+        const snack_blockColor2 = '#666';
+        //dead_blockColor
+        const dead_blockColor1 = '#644';
+        const dead_blockColor2 = '#866';
+    //running
+var snack_lastMove = Date.now();
+var snack_lastChangeDirection = Date.now();
+
+var snack_direction = 0;
+
+var lastDead;
+    //生成空间
+const space = [];
+for(let i=0;i<h;i++){
+    space[i] = [];
+    for(let j=0;j<w;j++){
+        space[i][j] = 0;
+    }
+}
+//随机选一个位置作为蛇头
+function randomSnackHead(){
+    let _h = Math.floor(Math.random()*h);
+    let _w = Math.floor(Math.random()*w);
+    while(space[_h][_w] !== 0){
+        _h = Math.floor(Math.random()*h);
+        _w = Math.floor(Math.random()*w);
+    }
+    space[_h][_w] = 1;
+}
+randomSnackHead();
+    //绘制snack
+function drawSnack(){
+    function drawBlock(x,y,isDead = false){
+        const color = buffer.createRadialGradient
+        (x*block_realSize + borderWidth + block_realSize/2,y*block_realSize + borderWidth + block_realSize/2,0,
+        x*block_realSize + borderWidth + block_realSize/2,y*block_realSize + borderWidth+block_realSize/2,block_realSize/2);
+        if(isDead){
+            color.addColorStop(0,dead_blockColor1);
+            color.addColorStop(1,dead_blockColor2);
+        }else{
+            color.addColorStop(0,snack_blockColor1);
+            color.addColorStop(1,snack_blockColor2);
+        }
+        buffer.fillStyle = color;
+        buffer.fillRect(x*block_realSize + borderWidth,y*block_realSize + borderWidth,block_realSize,block_realSize);
+        if(isDead){
+            buffer.strokeStyle = dead_blockColor1;
+        }else{
+            buffer.strokeStyle = snack_blockColor1;
+        }
+        buffer.strokeRect(x*block_realSize + borderWidth,y*block_realSize + borderWidth,block_realSize,block_realSize);
+    }
+    for(let i=0;i<h;i++){
+    for(let j=0;j<w;j++){
+    if(space[i][j] > 0){
+        drawBlock(j,i);}
+    if(space[i][j] < 0){
+        drawBlock(j,i,true);
+    }}}
+}
+    //move snack
+function moveSnack(){
+    function getHeadAndTailIndex(){
+        //最大的数字是头,最小的数字是尾
+        //找到最大的数字,最小的数字 的索引
+        let headIndex = [0,0];
+        let tailIndex = [0,0];
+
+        let snack_realLength = 0;
+        for(let i=0;i<h;i++){
+            for(let j=0;j<w;j++){
+                if(space[i][j] > 0){
+                    snack_realLength++;
+                    //必要的修正
+                    if(space[headIndex[0]][headIndex[1]] <= 0){headIndex[0]=i;headIndex[1]=j;}
+                    if(space[tailIndex[0]][tailIndex[1]] <= 0){tailIndex[0]=i;tailIndex[1]=j;}
+                    //更新头尾
+                    if(space[i][j] > space[headIndex[0]][headIndex[1]]){
+                        headIndex = [i,j];
+                    }else if(space[i][j] < space[tailIndex[0]][tailIndex[1]]){
+                        tailIndex = [i,j];
+        }}}}
+        return [headIndex,tailIndex,snack_realLength];
+    }
+    if(Date.now() - snack_lastMove > snack_timeInterval_move){
+        snack_lastMove = Date.now();
+        let [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
+        console.log(headIndex,tailIndex,snack_realLength);
+        let isDead = false;
+        //根据方向,在蛇头之前添加方块
+        function add(_h,_w,head){
+            //边界判定
+            if(_h < 0 || _h >= h || _w < 0 || _w >= w
+            || space[_h][_w] !== 0){
+                //死亡
+                lastDead = Date.now();
+                isDead = true;
+                return;}
+            space[_h][_w] = head + 1;
+        }
+        switch(snack_direction){
+            case 0://上
+                add(headIndex[0]-1,headIndex[1],space[headIndex[0]][headIndex[1]]);
+                break;
+            case 1://右
+                add(headIndex[0],headIndex[1]+1,space[headIndex[0]][headIndex[1]]);
+                break;
+            case 2://下
+                add(headIndex[0]+1,headIndex[1],space[headIndex[0]][headIndex[1]]);
+                break;
+            case 3://左
+                add(headIndex[0],headIndex[1]-1,space[headIndex[0]][headIndex[1]]);
+                break;
+        }
+        if(isDead){
+            dieAndRestart();
+            return;
+        }
+        if(snack_realLength >= snackLength){
+            space[tailIndex[0]][tailIndex[1]] = 0;
+        }
+    }
+    function dieAndRestart(){
+        //把所有大于0的数字都改为-1
+        for(let i=0;i<h;i++){
+            for(let j=0;j<w;j++){
+                if(space[i][j]> 0){
+                    space[i][j] = -1;
+        }}}
+        //如果-1过多,则清空
+        let count = 0;
+        for(let i=0;i<h;i++){
+            for(let j=0;j<w;j++){
+                if(space[i][j]<0){
+                    count++;
+        }}}
+        const max = 0.6;
+        if(count > max*h*w){
+            for(let i=0;i<h;i++){
+                for(let j=0;j<w;j++){
+                    space[i][j] = 0;
+        }}}
+        //重新设置蛇头
+        randomSnackHead();
+    }
+}
 //drawBG
 function drawBG(){
     function drawGrid(){
@@ -119,6 +272,8 @@ function render(){
 function drawAll(){
     buffer.clearRect(0,0,realWidth,realHeight);
     drawBG();
+    drawSnack();
+    moveSnack();
     drawBorder();
     render();
 }
