@@ -67,22 +67,13 @@ function setCVSPos(){
 }
 setCVSSize();
 setCVSPos();
-window.addEventListener('resize',()=>{
+function setElement(){
     setConstants();
     setCVSSize();
-    drawAll();
     setCVSPos();
-});
-
+}
 //drawBG
 function drawBG(){
-    function drawBorder(){
-        buffer.fillStyle = borderColor;
-        buffer.fillRect(0,0,realWidth,borderWidth);
-        buffer.fillRect(0,0,borderWidth,realHeight);
-        buffer.fillRect(0,realHeight-borderWidth,realWidth,borderWidth);
-        buffer.fillRect(realWidth-borderWidth,0,borderWidth,realHeight);
-    }
     function drawGrid(){
         buffer.fillStyle = gridColor;
         buffer.globalAlpha = gridAlpha;
@@ -95,7 +86,13 @@ function drawBG(){
         buffer.globalAlpha = 1;
     }
     drawGrid();
-    drawBorder();
+}
+function drawBorder(){
+    buffer.fillStyle = borderColor;
+    buffer.fillRect(0,0,realWidth,borderWidth);
+    buffer.fillRect(0,0,borderWidth,realHeight);
+    buffer.fillRect(0,realHeight-borderWidth,realWidth,borderWidth);
+    buffer.fillRect(realWidth-borderWidth,0,borderWidth,realHeight);
 }
 //render
 function render(){
@@ -106,10 +103,12 @@ function render(){
 function drawAll(){
     buffer.clearRect(0,0,realWidth,realHeight);
     drawBG();
+    drawBorder();
     render();
 }
 //main update
 function update(){
+    setElement();
     drawAll();
 }
 setInterval(update,updateTime);
