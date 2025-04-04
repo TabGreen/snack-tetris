@@ -93,6 +93,8 @@ var snack_lastChangeDirection = Date.now();
 var snack_direction = 0;
 
 var lastDead;
+var dead_animation_duration = 300;
+const warnColor = '#FF0000';
     //生成空间
 const space = [];
 for(let i=0;i<h;i++){
@@ -169,7 +171,6 @@ function moveSnack(){
     if(Date.now() - snack_lastMove > snack_timeInterval_move){
         snack_lastMove = Date.now();
         let [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
-        console.log(headIndex,tailIndex,snack_realLength);
         let isDead = false;
         //根据方向,在蛇头之前添加方块
         function add(_h,_w,head){
@@ -243,6 +244,23 @@ function drawBG(){
     }
     drawGrid();
 }
+// 辅助函数
+function getColorRGB(hex1, hex2, ratio) {
+    // 将16进制颜色转换为RGB数组
+    function hexToRgb(hex) {
+const bigint = parseInt(hex.slice(1), 16);
+return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];}
+    // 将RGB数组转换为16进制颜色
+    function rgbToHex(r, g, b) {
+return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;}
+    const c1 = hexToRgb(hex1);
+    const c2 = hexToRgb(hex2);
+    let r = c1[0] * (1 - ratio) + c2[0] * ratio;
+    let g = c1[1] * (1 - ratio) + c2[1] * ratio;
+    let b = c1[2] * (1 - ratio) + c2[2] * ratio;
+    r = Math.floor(r);g = Math.floor(g);b = Math.floor(b);
+    return rgbToHex(r, g, b);
+}
 function drawBorder() {
     const Scale_width = [7, 3, 2]; // 外边框, 狭小的空白, 内边框的宽度比
     const totalScale = Scale_width.reduce((a, b) => a + b, 0);
@@ -252,6 +270,14 @@ function drawBorder() {
 
     // 绘制外边框
     buffer.fillStyle = borderColor;
+if(lastDead){
+    let past = Date.now() - lastDead;
+    if(past< dead_animation_duration/2){
+        buffer.fillStyle = getColorRGB(borderColor, warnColor, past*2 / dead_animation_duration);
+    }else if(past>= dead_animation_duration/2 && past< dead_animation_duration){
+        buffer.fillStyle = getColorRGB(borderColor, warnColor, 1-past / dead_animation_duration);
+    }
+}
     buffer.fillRect(0, 0, realWidth, outerBorderWidth); // 上
     buffer.fillRect(0, 0, outerBorderWidth, realHeight); // 左
     buffer.fillRect(0, realHeight - outerBorderWidth, realWidth, outerBorderWidth); // 下
