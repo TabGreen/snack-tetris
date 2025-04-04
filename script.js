@@ -246,29 +246,36 @@ function moveSnack(){
 }
 //change direction
 function changeDirection(){
-    if(Date.now() - snack_lastChangeDirection > snack_timeInterval_changeDirection){
+    [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
+    let canDir = [];
+    function canChange(_h,_w){
+        if(_h < 0 || _h >= h || _w < 0 || _w >= w
+        || space[_h][_w] !== 0){
+            return false;
+        }else{
+            return true;
+        }
+    }
+    if(canChange(headIndex[0]-1,headIndex[1])){canDir.push(0);}
+    if(canChange(headIndex[0],headIndex[1]+1)){canDir.push(1);}
+    if(canChange(headIndex[0]+1,headIndex[1])){canDir.push(2);}
+    if(canChange(headIndex[0],headIndex[1]-1)){canDir.push(3);}
+    
+    function set(){
         setDirChangeInterval();
         snack_lastChangeDirection = Date.now();
-        [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
-        let canDir = [];
-        function canChange(_h,_w){
-            if(_h < 0 || _h >= h || _w < 0 || _w >= w
-            || space[_h][_w] !== 0){
-                return false;
-            }else{
-                return true;
-            }
-        }
-        if(canChange(headIndex[0]-1,headIndex[1])){canDir.push(0);}
-        if(canChange(headIndex[0],headIndex[1]+1)){canDir.push(1);}
-        if(canChange(headIndex[0]+1,headIndex[1])){canDir.push(2);}
-        if(canChange(headIndex[0],headIndex[1]-1)){canDir.push(3);}
 
-        if(canDir.length > 0){
-            let sdi = Math.floor(canDir.length*Math.random());
-            if(sdi >= canDir.length){sdi = canDir.length-1;}
-            snack_direction = canDir[sdi];
+        let sdi = Math.floor(canDir.length*Math.random());
+        if(sdi >= canDir.length){sdi = canDir.length-1;}
+        snack_direction = canDir[sdi];
+    }
+
+    if(canDir.length === 3){
+        if(Date.now() - snack_lastChangeDirection > snack_timeInterval_changeDirection){
+            set();
         }
+    }else if(canDir.length > 0 && canDir.length < 3){
+        set();
     }
 }
 //drawBG
