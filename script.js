@@ -113,7 +113,7 @@ for(let i=0;i<h;i++){
         space[i][j] = 0;
     }
 }
-//随机选一个位置作为蛇头
+    //随机选一个位置作为蛇头
 function randomSnackHead(){
     let _h = Math.floor(Math.random()*h);
     let _w = Math.floor(Math.random()*w);
@@ -244,7 +244,7 @@ function moveSnack(){
         randomDirection();
     }
 }
-//change direction
+    //change direction
 function changeDirection(){
     [headIndex,tailIndex,snack_realLength] = getHeadAndTailIndex();
     let canDir = [];
@@ -299,6 +299,122 @@ debugger;
     }else if(canDir.length > 0){
         set();
     }
+}
+//tetris
+    //constants
+const shapes = [
+    [//单个形状
+        [[1,1,1,1]]/*单种旋转*/
+    ],
+
+    [[[1,1],
+    [1,1]]],
+
+    [[[0,1,0],
+    [1,1,1]]],
+
+    [[[1,0,0],
+    [1,1,1]]],
+
+    [[[0,0,1],
+    [1,1,1]]],
+
+    [[[0,1,1],
+    [1,1,0]]],
+
+    [[[1,1,0],
+    [0,1,1]]]
+]
+const shapeColors = [
+    "#00FFFF",
+    "#FFFF00",
+    "#FF00FF",
+    "#9400D3",
+    "#FFA500",
+    "#00FF00",
+    "#FF0000"
+]
+    //draw
+        //由于这个方块的绘制逻辑来源于我的另一个项目,因此保留了旧代码的部分特性,包括 用xy定位而不是hw
+        //drawBlock
+const borderOfTetrisBlock = 0.2;
+const tetris_colorChange = [0.6,0.7,-0.5,-0.6];//tetris方块周围的梯形颜色增减值的数组
+
+function drawTetrisBlock(x, y, colorIndex){
+
+
+    buffer.fillStyle = shapeColors[colorIndex];
+
+    const rectData = [(x+borderOfTetrisBlock),(y+borderOfTetrisBlock),(1-borderOfTetrisBlock*2),(1-borderOfTetrisBlock*2)]
+    buffer.fillRect(
+    rectData[0]*block_realSize+borderWidth,
+    rectData[1]*block_realSize+borderWidth,
+    rectData[2]*block_realSize,
+    rectData[3]*block_realSize);
+    buffer.strokeStyle = shapeColors[colorIndex];
+
+    const points = [
+        [
+            [x, y],
+            [(x+1), y],
+            [(x+1-borderOfTetrisBlock), (y+borderOfTetrisBlock)],
+            [(x+borderOfTetrisBlock), (y+borderOfTetrisBlock)]
+        ],
+        [
+            [(x+1), y],
+            [(x+1), (y+1)],
+            [(x+1-borderOfTetrisBlock), (y+1-borderOfTetrisBlock)],
+            [(x+1-borderOfTetrisBlock), (y+borderOfTetrisBlock)]
+        ],
+        [
+            [x, (y+1)],
+            [(x+1), (y+1)],
+            [(x+1-borderOfTetrisBlock), (y+1-borderOfTetrisBlock)],
+            [(x+borderOfTetrisBlock), (y+1-borderOfTetrisBlock)]
+        ],
+        [
+            [x, y],
+            [x, (y+1)],
+            [(x+borderOfTetrisBlock), (y+1-borderOfTetrisBlock)],
+            [(x+borderOfTetrisBlock), (y+borderOfTetrisBlock)]
+        ]
+    ]
+    for(let i=0;i<points.length;i++){
+        for(let j=0;j<points[i].length;j++){
+            points[i][j][0] = points[i][j][0]*block_realSize+borderWidth;
+            points[i][j][1] = points[i][j][1]*block_realSize+borderWidth;
+        }
+    }
+    for(let i=0;i<4;i++){
+        buffer.beginPath();
+        buffer.moveTo(points[i][0][0],points[i][0][1]);
+        buffer.lineTo(points[i][1][0],points[i][1][1]);
+        buffer.lineTo(points[i][2][0],points[i][2][1]);
+        buffer.lineTo(points[i][3][0],points[i][3][1]);
+        buffer.closePath();
+        buffer.strokeStyle = adjustColorBrightness(shapeColors[colorIndex],tetris_colorChange[i]);
+        buffer.fillStyle = adjustColorBrightness(shapeColors[colorIndex],tetris_colorChange[i]);
+        buffer.fill();
+        buffer.stroke();
+    }
+}
+        //drawTetrisShape
+function drawTetrisShape(shapeIndex, shapeRotation, x, y){
+    for(let i=0;i<shapes[shapeIndex][shapeRotation].length;i++){
+        for(let j=0;j<shapes[shapeIndex][shapeRotation][i].length;j++){
+            if(shapes[shapeIndex][shapeRotation][i][j] === 1){
+                drawTetrisBlock(x+j, y+i, shapeIndex);
+            }}}
+}
+        //辅助函数
+function adjustColorBrightness(hexColor, percent) {//改变颜色亮度,使方块更灵动
+    var r = parseInt(hexColor.substring(1, 3), 16);var g = parseInt(hexColor.substring(3, 5), 16);var b = parseInt(hexColor.substring(5, 7), 16);var color = [r,g,b];
+    if(percent > 0){for(let i = 0;i<color.length;i++){if(color[i]>=255){continue;}if(color[i]<=0){color[i]=Math.floor(255*percent);continue;
+    }color[i] += color[i] * percent;if(color[i]>255){color[i]=255;}}}if(percent<0){percent = Math.abs(percent);for(let i = 0;i<color.length;i++){
+    if(color[i]<=0){continue;}if(color[i]>=255){color[i]=Math.floor(255* percent);continue;}color[i] -= color[i] * percent;if(color[i]<=0){color[i]=0;}}}
+    color = color.map(function(c) {return Math.floor(c);});
+    var newColor =   `#${color[0].toString(16).padStart(2, '0')}${color[1].toString(16).padStart(2, '0')}${color[2].toString(16).padStart(2, '0')}`;
+    return newColor;
 }
 //drawBG
 function drawBG(){
