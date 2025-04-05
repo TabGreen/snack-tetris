@@ -373,7 +373,6 @@ for(let i=0;i<shapes.length;i++){
 
     shapes[i].push(shape_rotated1,shape_rotated2,shape_rotated3);
 }
-console.log(...shapes);
 const shapeColors = [
     "#00FFFF",
     "#FFFF00",
@@ -455,6 +454,69 @@ function drawTetrisShape(shapeIndex, shapeRotation, x, y){
                 drawTetrisBlock(x+j, y+i, shapeIndex);
             }}}
 }
+
+
+        //get TetrisShape on snack
+var tetris_lastCreated = Date.now();
+const tetris_timeInterval_create = 1000;
+const tetris_createHistory = [0,0,0,0,0,0,0];
+const tetris_created = [];//[...,[shapeIndex,rotation,x,y,createdTime],...]
+function drawTetris(){
+    for(let i=0;i<tetris_created.length;i++){
+        //等待开发
+        drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3]);
+    }
+}
+function createTetris(){
+    function findShapesOnSnack(){
+        const canCover = [];
+        for(let shapeIndex=0;shapeIndex<shapes.length;shapeIndex++){
+            for(let rotation=0;rotation<shapes[shapeIndex].length;rotation++){
+                const shape = shapes[shapeIndex][rotation];
+                for(let posY=0;posY<space.length-shape.length;posY++){
+                    for(let posX=0;posX<space[posY].length-shape[0].length;posX++){
+                        if(space[posY][posX] <= 0){continue;}
+                        let isCover = true;
+                        (()=>{
+                            for(let shapeY=0;shapeY<shape.length;shapeY++){
+                                for(let shapeX=0;shapeX<shape[shapeY].length;shapeX++){
+                                    if(shape[shapeY][shapeX] === 1){
+                                        if(space[posY+shapeY][posX+shapeX] <= 0){
+                                            isCover = false;
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        })();
+                        if(isCover){
+                            canCover.push([shapeIndex,rotation,posX,posY]);
+                        }
+                    }
+                }
+            }
+        }
+        return canCover;
+    }
+    //等待开发
+    function chooseShape(allCanCover){
+        let index = Math.floor(Math.random()*allCanCover.length);
+        if(index>=allCanCover.length){index=allCanCover.length-1;}
+        return allCanCover[index];
+    }
+    if(Date.now()-tetris_lastCreated>tetris_timeInterval_create){
+        tetris_lastCreated = Date.now();
+        const canCover = findShapesOnSnack();
+        if(canCover.length>0){
+            const used = chooseShape(canCover);
+            used.push(Date.now());
+            tetris_created.push(used);
+            tetris_createHistory[used[0]]++;
+        }
+    }
+}
+
+
         //辅助函数
 function adjustColorBrightness(hexColor, percent) {//改变颜色亮度,使方块更灵动
     var r = parseInt(hexColor.substring(1, 3), 16);var g = parseInt(hexColor.substring(3, 5), 16);var b = parseInt(hexColor.substring(5, 7), 16);var color = [r,g,b];
@@ -535,6 +597,7 @@ function drawAll(){
     buffer.clearRect(0,0,realWidth,realHeight);
     drawBG();
     drawSnack();
+    drawTetris();
     drawBorder();
     render();
 }
@@ -543,6 +606,7 @@ function update(){
     setElement();
     moveSnack();
     changeDirection();
+    createTetris();
     drawAll();
 }
 setInterval(update,updateTime);
