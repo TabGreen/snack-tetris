@@ -325,6 +325,55 @@ const shapes = [
     [[[1,1,0],
     [0,1,1]]]
 ]
+//给每个形状创建旋转后的图像
+for(let i=0;i<shapes.length;i++){
+    const shape = shapes[i][0];
+    //顺时针旋转90
+    const shape_rotated1 = [];
+    for(let j=0;j<shape[0].length;j++){
+        let row = [];
+        for(let k=0;k<shape.length;k++){
+            row.push(0);
+        }
+        shape_rotated1.push(row);
+    }
+    for(let y=0;y<shape.length;y++){
+        for(let x=0;x<shape[0].length;x++){
+            shape_rotated1[x][shape.length-y-1] = shape[y][x];
+        }
+    }
+    //180
+    const shape_rotated2 = [];
+    for(let j=0;j<shape.length;j++){
+        let row = [];
+        for(let k=0;k<shape[0].length;k++){
+            row.push(0);
+        }
+        shape_rotated2.push(row);
+    }
+    for(let y=0;y<shape.length;y++){
+        for(let x=0;x<shape[0].length;x++){
+            shape_rotated2[shape.length-y-1][shape[0].length-x-1] = shape[y][x];
+        }
+    }
+    //逆时针旋转90
+    const shape_rotated3 = [];
+    for(let j=0;j<shape[0].length;j++){
+        let row = [];
+        for(let k=0;k<shape.length;k++){
+            row.push(0);
+        }
+        shape_rotated3.push(row);
+    }
+    for(let y=0;y<shape.length;y++){
+        for(let x=0;x<shape[0].length;x++){
+            shape_rotated3[shape[0].length-x-1][y] = shape[y][x];
+        }
+    }
+
+    shapes[i].push(shape_rotated1,shape_rotated2,shape_rotated3);
+}
+console.log(...shapes);
 const shapeColors = [
     "#00FFFF",
     "#FFFF00",
