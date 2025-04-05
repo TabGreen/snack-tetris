@@ -16,7 +16,7 @@ var realHeight;
 
 const Scale_gridWidth = 0.06;//相对于一个格子的尺寸
 var gridWidth;//px
-const gridColor = '#888';
+const gridColor = '#888888';
 const gridAlpha = 0.3;
 
     //除去边框的可用区域尺寸
@@ -87,11 +87,11 @@ function setDirChangeInterval(){
 }
 setDirChangeInterval();
         //snack_blockColor
-        const snack_blockColor1 = '#444';
-        const snack_blockColor2 = '#666';
+        const snack_blockColor1 = '#444444';
+        const snack_blockColor2 = '#666666';
         //dead_blockColor
-        const dead_blockColor1 = '#644';
-        const dead_blockColor2 = '#866';
+        const dead_blockColor1 = '#774444';
+        const dead_blockColor2 = '#886666';
     //running
 var snack_lastMove = Date.now();
 var snack_lastChangeDirection = Date.now();
@@ -270,11 +270,33 @@ function changeDirection(){
         snack_direction = canDir[sdi];
     }
 
-    if(canDir.length === 3){
+/*
+ YY    YY        OOOOO       UU      UU       !!!
+  YY  YY       OO     OO     UU      UU       !!!
+    YY         OO     OO     UU      UU       !!!
+    YY         OO     OO     UU      UU
+    YY           OOOOO        UUUUUUUU        !!!
+
+Here are something to tell you:
+*/
+debugger;
+/*
+蛇的死亡是这个动画的一部分.
+当蛇足够长时(5格以上),它的身体在空间中会堆成一团
+当蛇身形成一个封闭空间,并且蛇误入这个由自己身体构成的陷阱内,
+蛇就会无法返回,只能前进,最终碰到自己的身体,然后死亡
+控制蛇转向的算法很简单,就是在蛇头周围有空格时,随机选择一个空格,
+因此,蛇无法对复杂环境做出决策,只能靠随机选择,
+然而,这种“错误”正是这个动画的魅力之一
+如果想要进行更近一步的决策,很抱歉,我懒得想,也懒得写
+因为这个项目只是一个简单的艺术品,而并非深究算法的人工智能
+*/
+
+    if(canDir.includes(snack_direction)){
         if(Date.now() - snack_lastChangeDirection > snack_timeInterval_changeDirection){
             set();
         }
-    }else if(canDir.length > 0 && canDir.length < 3){
+    }else if(canDir.length > 0){
         set();
     }
 }
@@ -294,7 +316,7 @@ function drawBG(){
     drawGrid();
 }
 // 辅助函数
-function getColorRGB(hex1, hex2, ratio) {
+function getColorHex(hex1, hex2, ratio) {
     // 将16进制颜色转换为RGB数组
     function hexToRgb(hex) {
 const bigint = parseInt(hex.slice(1), 16);
@@ -322,9 +344,9 @@ function drawBorder() {
 if(lastDead){
     let past = Date.now() - lastDead;
     if(past< dead_animation_duration/2){
-        buffer.fillStyle = getColorRGB(borderColor, warnColor, past*2 / dead_animation_duration);
+        buffer.fillStyle = getColorHex(borderColor, warnColor, past*2 / dead_animation_duration);
     }else if(past>= dead_animation_duration/2 && past< dead_animation_duration){
-        buffer.fillStyle = getColorRGB(borderColor, warnColor, 1-past / dead_animation_duration);
+        buffer.fillStyle = getColorHex(borderColor, warnColor, 1-past / dead_animation_duration);
     }
 }
     buffer.fillRect(0, 0, realWidth, outerBorderWidth); // 上
