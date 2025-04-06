@@ -77,7 +77,7 @@ function setElement(){
 }
 //snack
     //constants
-const snackLength = 6;
+const snackLength = 9;
 const snack_timeInterval_move = 60;//两次移动的时间间隔
 
 const snack_timeInterval_changeDirection_max = 500;//两次改变方向的时间间隔
@@ -427,12 +427,78 @@ function drawTetrisShape(shapeIndex, shapeRotation, x, y){
                 drawTetrisBlock(x+j, y+i, shapeIndex);
             }}}
 }
+        //drawTetrisShape_Border
+function drawTetrisShape_Border(){
+    //最外层if的条件不够完善,在突然停止生成时边框会延后消失
+    if(Date.now()-tetris_lastCreated < snack_timeInterval_move){
+        if(tetris_created.length<=0){return;}
+
+        //找出最后创建的形状
+        let index = 0;
+        for(let i=0;i<tetris_created.length;i++){
+            if(tetris_created[i][4] > tetris_created[index][4]){
+                index = i;
+            }
+        }
+        const lastCreatedShape = tetris_created[index];
+        const shape = shapes[lastCreatedShape[0]][lastCreatedShape[1]];
+        //在画布上描绘出形状的外边框
+        for(let y=0;y<shape.length;y++){
+            for(let x=0;x<shape[0].length;x++){
+                if(shape[y][x] === 1){
+                    //验证指定坐标是否是空白
+                    function isBlank(_w,_h){
+                        const h = shape.length;
+                        const w = shape[0].length;
+                        const isOut = _w < 0 || _w >= w || _h < 0 || _h >= h;
+                        if(isOut){return true;}
+                        const isBlank = shape[_h][_w] === 0;
+                        if(isBlank){return true;}
+                        return false;
+                    }
+                    //验证上面一格
+                    const isBlank_up = isBlank(x,y-1);
+                    //验证右边一格
+                    const isBlank_right = isBlank(x+1,y);
+                    //验证下面一格
+                    const isBlank_down = isBlank(x,y+1);
+                    //验证左边一格
+                    const isBlank_left = isBlank(x-1,y);
+
+                    function drawLine(x1,y1,x2,y2){
+                        buffer.beginPath();
+                        buffer.moveTo(x1*block_realSize+borderWidth,y1*block_realSize+borderWidth);
+                        buffer.lineTo(x2*block_realSize+borderWidth,y2*block_realSize+borderWidth);
+                        buffer.strokeStyle = shapeColors[lastCreatedShape[0]];
+                        buffer.lineWidth = borderWidth/1.2;
+                        buffer.stroke();
+                    }
+
+                    const realX = lastCreatedShape[2]+x;
+                    const realY = lastCreatedShape[3]+y;
+                    if(isBlank_up){
+                        drawLine(realX,realY,realX+1,realY);
+                    }
+                    if(isBlank_right){
+                        drawLine(realX+1,realY,realX+1,realY+1);
+                    }
+                    if(isBlank_down){
+                        drawLine(realX,realY+1,realX+1,realY+1);
+                    }
+                    if(isBlank_left){
+                        drawLine(realX,realY,realX,realY+1);
+                    }
+                }
+            }
+        }
+    }
+}
 
 
         //get TetrisShape on snack
 var tetris_lastCreated = Date.now();
-const tetris_timeInterval_create = 5;
-const tetris_animation_duration = 300;
+const tetris_timeInterval_create = 500;
+const tetris_animation_duration = 700;
 const tetris_createHistory = [0,0,0,0,0,0,0];
 const tetris_created = [];//[...,[shapeIndex,rotation,x,y,createdTime],...]
 function drawTetris(){
@@ -451,6 +517,7 @@ function drawTetris(){
         }else if(past >= tetris_animation_duration){
             buffer.globalAlpha = 0;
         }
+        buffer.globalAlpha *= 0.7;
         drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3],zoom);
         buffer.globalAlpha = 1;
     }
@@ -461,8 +528,8 @@ function createTetris(){
         for(let shapeIndex=0;shapeIndex<shapes.length;shapeIndex++){
             for(let rotation=0;rotation<shapes[shapeIndex].length;rotation++){
                 const shape = shapes[shapeIndex][rotation];
-                for(let posY=0;posY<space.length-shape.length;posY++){
-                    for(let posX=0;posX<space[posY].length-shape[0].length;posX++){
+                for(let posY=0;posY<space.length-shape.length+1;posY++){
+                    for(let posX=0;posX<space[posY].length-shape[0].length+1;posX++){
                         if(space[posY][posX] <= 0){continue;}
                         let isCover = true;
                         (()=>{
@@ -520,9 +587,10 @@ function createTetris(){
         }
     }
     const isTimeToCreate = Date.now()-tetris_lastCreated>tetris_timeInterval_create;
-    if(isNotCollide){
+    if(isNotCollide && isTimeToCreate){
         tetris_lastCreated = Date.now();
         const canCover = findShapesOnSnack();
+        console.log(canCover.length)
         if(canCover.length>0){
             const used = chooseShape(canCover);
             used.push(Date.now());
@@ -623,16 +691,21 @@ function drawAll(){
     drawBG();
     drawSnack();
     drawTetris();
+    drawTetrisShape_Border();
     drawBorder();
     render();
 }
-//main update
-function update(){
+//compute all
+function computeAll(){
     setElement();
     moveSnack();
     changeDirection();
     createTetris();
     deleteTetris();
+}
+//main update
+function update(){
+    computeAll();
     drawAll();
 }
 setInterval(update,updateTime);
