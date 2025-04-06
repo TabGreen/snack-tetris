@@ -86,12 +86,6 @@ function setDirChangeInterval(){
     snack_timeInterval_changeDirection = Math.floor(Math.random()*snack_timeInterval_changeDirection_max);
 }
 setDirChangeInterval();
-        //snack_blockColor
-        const snack_blockColor1 = '#444444';
-        const snack_blockColor2 = '#666666';
-        //dead_blockColor
-        const dead_blockColor1 = '#774444';
-        const dead_blockColor2 = '#886666';
     //running
 var snack_lastMove = Date.now();
 var snack_lastChangeDirection = Date.now();
@@ -126,36 +120,12 @@ function randomSnackHead(){
 randomSnackHead();
     //绘制snack
 function drawSnack(){
-    function drawBlock(x,y,isDead = false){
-        const color = buffer.createRadialGradient
-        (x*block_realSize + borderWidth + block_realSize/2,y*block_realSize + borderWidth + block_realSize/2,0,
-        x*block_realSize + borderWidth + block_realSize/2,y*block_realSize + borderWidth+block_realSize/2,block_realSize/2);
-        if(isDead){
-            color.addColorStop(0,dead_blockColor1);
-            color.addColorStop(1,dead_blockColor2);
-
-            buffer.globalAlpha = 0.8;
-        }else{
-            color.addColorStop(0,snack_blockColor1);
-            color.addColorStop(1,snack_blockColor2);
-        }
-        buffer.fillStyle = color;
-        buffer.fillRect(x*block_realSize + borderWidth,y*block_realSize + borderWidth,block_realSize,block_realSize);
-        if(isDead){
-            buffer.strokeStyle = dead_blockColor1;
-
-            buffer.globalAlpha = 1;
-        }else{
-            buffer.strokeStyle = snack_blockColor1;
-        }
-        buffer.strokeRect(x*block_realSize + borderWidth,y*block_realSize + borderWidth,block_realSize,block_realSize);
-    }
     for(let i=0;i<h;i++){
     for(let j=0;j<w;j++){
     if(space[i][j] > 0){
-        drawBlock(j,i);}
+        drawTetrisBlock(j,i,7);}
     if(space[i][j] < 0){
-        drawBlock(j,i,true);
+        drawTetrisBlock(j,i,8);
     }}}
 }
     //move snack
@@ -380,7 +350,10 @@ const shapeColors = [
     "#9400D3",
     "#FFA500",
     "#00FF00",
-    "#FF0000"
+    "#FF0000",
+
+    "#666666",//蛇的颜色
+    "#886666",//死亡的蛇的颜色
 ]
     //draw
         //由于这个方块的绘制逻辑来源于我的另一个项目,因此保留了旧代码的部分特性,包括 用xy定位而不是hw
@@ -458,13 +431,28 @@ function drawTetrisShape(shapeIndex, shapeRotation, x, y){
 
         //get TetrisShape on snack
 var tetris_lastCreated = Date.now();
-const tetris_timeInterval_create = 1000;
+const tetris_timeInterval_create = 5;
+const tetris_animation_duration = 700;
 const tetris_createHistory = [0,0,0,0,0,0,0];
 const tetris_created = [];//[...,[shapeIndex,rotation,x,y,createdTime],...]
 function drawTetris(){
     for(let i=0;i<tetris_created.length;i++){
         //等待开发
-        drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3]);
+        const fadeIn = tetris_animation_duration*0.3;
+        const fadeOut = tetris_animation_duration*0.7;
+
+        let zoom=0;
+        const past = Date.now() - tetris_created[i][4];
+        if(past < fadeIn){
+            buffer.globalAlpha = past/fadeIn;
+        }else if(past < tetris_animation_duration){
+            buffer.globalAlpha = (tetris_animation_duration-past)/fadeOut;
+            zoom = 1-(tetris_animation_duration-past)/fadeOut;
+        }else if(past >= tetris_animation_duration){
+            buffer.globalAlpha = 0;
+        }
+        drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3],zoom);
+        buffer.globalAlpha = 1;
     }
 }
 function createTetris(){
@@ -504,7 +492,26 @@ function createTetris(){
         if(index>=allCanCover.length){index=allCanCover.length-1;}
         return allCanCover[index];
     }
-    if(Date.now()-tetris_lastCreated>tetris_timeInterval_create){
+    //判断蛇是否与有的tetris重叠
+    let isNotCollide = true;
+    for(let i=0;i<tetris_created.length;i++){
+        const shape = shapes[tetris_created[i][0]][tetris_created[i][1]];
+        const posX = tetris_created[i][2];
+        const posY = tetris_created[i][3];
+        for(let shapeY=0;shapeY<shape.length;shapeY++){
+            for(let shapeX=0;shapeX<shape[shapeY].length;shapeX++){
+                if(shape[shapeY][shapeX] === 1){
+                    let realPosX = posX+shapeX;
+                    let realPosY = posY+shapeY;
+                    if(space[realPosY][realPosX]>0){
+                        isNotCollide = false;
+                    }
+                }
+            }
+        }
+    }
+    const isTimeToCreate = Date.now()-tetris_lastCreated>tetris_timeInterval_create;
+    if(isTimeToCreate && isNotCollide){
         tetris_lastCreated = Date.now();
         const canCover = findShapesOnSnack();
         if(canCover.length>0){
@@ -516,6 +523,15 @@ function createTetris(){
     }
 }
 
+function deleteTetris(){
+    for(let i=0;i<tetris_created.length;i++){
+        const past = Date.now() - tetris_created[i][4];
+        if(past >= tetris_animation_duration){
+            tetris_created.splice(i,1);
+            i--;
+        }
+    }
+}
 
         //辅助函数
 function adjustColorBrightness(hexColor, percent) {//改变颜色亮度,使方块更灵动
@@ -607,6 +623,7 @@ function update(){
     moveSnack();
     changeDirection();
     createTetris();
+    deleteTetris();
     drawAll();
 }
 setInterval(update,updateTime);
