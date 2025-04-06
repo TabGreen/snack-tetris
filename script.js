@@ -123,9 +123,9 @@ function drawSnack(){
     for(let i=0;i<h;i++){
     for(let j=0;j<w;j++){
     if(space[i][j] > 0){
-        drawTetrisBlock(j,i,7);}
+        drawTetrisBlock(j,i,7,borderOfTetrisBlock/1.5);}
     if(space[i][j] < 0){
-        drawTetrisBlock(j,i,8);
+        drawTetrisBlock(j,i,8,borderOfTetrisBlock/1.5);
     }}}
 }
     //move snack
@@ -361,12 +361,12 @@ const shapeColors = [
 const borderOfTetrisBlock = 0.2;
 const tetris_colorChange = [0.6,0.7,-0.5,-0.6];//tetris方块周围的梯形颜色增减值的数组
 
-function drawTetrisBlock(x, y, colorIndex){
+function drawTetrisBlock(x, y, colorIndex,bdr = borderOfTetrisBlock){
 
 
     buffer.fillStyle = shapeColors[colorIndex];
 
-    const rectData = [(x+borderOfTetrisBlock),(y+borderOfTetrisBlock),(1-borderOfTetrisBlock*2),(1-borderOfTetrisBlock*2)]
+    const rectData = [(x+bdr),(y+bdr),(1-bdr*2),(1-bdr*2)]
     buffer.fillRect(
     rectData[0]*block_realSize+borderWidth,
     rectData[1]*block_realSize+borderWidth,
@@ -378,26 +378,26 @@ function drawTetrisBlock(x, y, colorIndex){
         [
             [x, y],
             [(x+1), y],
-            [(x+1-borderOfTetrisBlock), (y+borderOfTetrisBlock)],
-            [(x+borderOfTetrisBlock), (y+borderOfTetrisBlock)]
+            [(x+1-bdr), (y+bdr)],
+            [(x+bdr), (y+bdr)]
         ],
         [
             [(x+1), y],
             [(x+1), (y+1)],
-            [(x+1-borderOfTetrisBlock), (y+1-borderOfTetrisBlock)],
-            [(x+1-borderOfTetrisBlock), (y+borderOfTetrisBlock)]
+            [(x+1-bdr), (y+1-bdr)],
+            [(x+1-bdr), (y+bdr)]
         ],
         [
             [x, (y+1)],
             [(x+1), (y+1)],
-            [(x+1-borderOfTetrisBlock), (y+1-borderOfTetrisBlock)],
-            [(x+borderOfTetrisBlock), (y+1-borderOfTetrisBlock)]
+            [(x+1-bdr), (y+1-bdr)],
+            [(x+bdr), (y+1-bdr)]
         ],
         [
             [x, y],
             [x, (y+1)],
-            [(x+borderOfTetrisBlock), (y+1-borderOfTetrisBlock)],
-            [(x+borderOfTetrisBlock), (y+borderOfTetrisBlock)]
+            [(x+bdr), (y+1-bdr)],
+            [(x+bdr), (y+bdr)]
         ]
     ]
     for(let i=0;i<points.length;i++){
@@ -432,7 +432,7 @@ function drawTetrisShape(shapeIndex, shapeRotation, x, y){
         //get TetrisShape on snack
 var tetris_lastCreated = Date.now();
 const tetris_timeInterval_create = 5;
-const tetris_animation_duration = 700;
+const tetris_animation_duration = 300;
 const tetris_createHistory = [0,0,0,0,0,0,0];
 const tetris_created = [];//[...,[shapeIndex,rotation,x,y,createdTime],...]
 function drawTetris(){
@@ -451,7 +451,6 @@ function drawTetris(){
         }else if(past >= tetris_animation_duration){
             buffer.globalAlpha = 0;
         }
-        buffer.globalAlpha *= 0.4;
         drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3],zoom);
         buffer.globalAlpha = 1;
     }
