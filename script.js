@@ -437,7 +437,7 @@ const tetris_createHistory = [0,0,0,0,0,0,0];
 const tetris_created = [];//[...,[shapeIndex,rotation,x,y,createdTime],...]
 function drawTetris(){
     for(let i=0;i<tetris_created.length;i++){
-        //等待开发
+        //等待改进
         const fadeIn = tetris_animation_duration*0.3;
         const fadeOut = tetris_animation_duration*0.7;
 
@@ -451,6 +451,7 @@ function drawTetris(){
         }else if(past >= tetris_animation_duration){
             buffer.globalAlpha = 0;
         }
+        buffer.globalAlpha *= 0.4;
         drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3],zoom);
         buffer.globalAlpha = 1;
     }
@@ -486,11 +487,20 @@ function createTetris(){
         }
         return canCover;
     }
-    //等待开发
-    function chooseShape(allCanCover){
-        let index = Math.floor(Math.random()*allCanCover.length);
-        if(index>=allCanCover.length){index=allCanCover.length-1;}
-        return allCanCover[index];
+    //等待完善
+    function chooseShape(canCover){
+        let index;
+
+        let showLeast = 0;
+        for(let i=0;i<canCover.length;i++){
+            if(tetris_createHistory[canCover[i][0]] < tetris_createHistory[canCover[showLeast][0]]){
+                showLeast = i;
+            }else if(tetris_createHistory[canCover[i][0]] === tetris_createHistory[canCover[showLeast][0]]){
+                if(Math.random()<0.5){showLeast = i;}
+            }
+        }
+        index = showLeast;
+        return canCover[index];
     }
     //判断蛇是否与有的tetris重叠
     let isNotCollide = true;
@@ -511,7 +521,7 @@ function createTetris(){
         }
     }
     const isTimeToCreate = Date.now()-tetris_lastCreated>tetris_timeInterval_create;
-    if(isTimeToCreate && isNotCollide){
+    if(isNotCollide){
         tetris_lastCreated = Date.now();
         const canCover = findShapesOnSnack();
         if(canCover.length>0){
