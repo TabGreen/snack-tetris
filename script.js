@@ -78,7 +78,7 @@ function setElement(){
 //snack
     //constants
 const snackLength = 9;
-const snack_timeInterval_move = 60;//两次移动的时间间隔
+const snack_timeInterval_move = 70;//两次移动的时间间隔
 
 const snack_timeInterval_changeDirection_max = 500;//两次改变方向的时间间隔
 var snack_timeInterval_changeDirection;
@@ -361,49 +361,51 @@ const shapeColors = [
 const borderOfTetrisBlock = 0.2;
 const tetris_colorChange = [0.6,0.7,-0.5,-0.6];//tetris方块周围的梯形颜色增减值的数组
 
-function drawTetrisBlock(x, y, colorIndex,bdr = borderOfTetrisBlock){
+function drawTetrisBlock(x, y, colorIndex,bdr = borderOfTetrisBlock,zoom=1){
 
 
     buffer.fillStyle = shapeColors[colorIndex];
 
-    const rectData = [(x+bdr),(y+bdr),(1-bdr*2),(1-bdr*2)]
-    buffer.fillRect(
-    rectData[0]*block_realSize+borderWidth,
-    rectData[1]*block_realSize+borderWidth,
-    rectData[2]*block_realSize,
-    rectData[3]*block_realSize);
+    const rectData = [x,y,1,1];
+    var nrd = [];//new rectData
+    for(let i=0;i<rectData.length;i++){
+        nrd.push(rectData[i] * block_realSize);
+        if(i<2){nrd[i] += borderWidth;nrd[i]-=(zoom-1)/2*block_realSize;}
+        if(i>=2){nrd[i] *= zoom;}
+    }
+    buffer.fillRect(nrd[0],nrd[1],nrd[2],nrd[3]);
     buffer.strokeStyle = shapeColors[colorIndex];
 
     const points = [
         [
-            [x, y],
-            [(x+1), y],
-            [(x+1-bdr), (y+bdr)],
-            [(x+bdr), (y+bdr)]
+            [0,0],
+            [1,0],
+            [1-bdr,bdr],
+            [bdr,bdr]
         ],
         [
-            [(x+1), y],
-            [(x+1), (y+1)],
-            [(x+1-bdr), (y+1-bdr)],
-            [(x+1-bdr), (y+bdr)]
+            [1,0],
+            [1,1],
+            [1-bdr,1-bdr],
+            [1-bdr,bdr]
         ],
         [
-            [x, (y+1)],
-            [(x+1), (y+1)],
-            [(x+1-bdr), (y+1-bdr)],
-            [(x+bdr), (y+1-bdr)]
+            [0,1],
+            [1,1],
+            [1-bdr,1-bdr],
+            [bdr,1-bdr]
         ],
         [
-            [x, y],
-            [x, (y+1)],
-            [(x+bdr), (y+1-bdr)],
-            [(x+bdr), (y+bdr)]
+            [0,0],
+            [0,1],
+            [0+bdr,1-bdr],
+            [0+bdr,bdr]
         ]
     ]
     for(let i=0;i<points.length;i++){
         for(let j=0;j<points[i].length;j++){
-            points[i][j][0] = points[i][j][0]*block_realSize+borderWidth;
-            points[i][j][1] = points[i][j][1]*block_realSize+borderWidth;
+            points[i][j][0] = points[i][j][0]*block_realSize*zoom -(zoom-1)/2*block_realSize +x*block_realSize +borderWidth;
+            points[i][j][1] = points[i][j][1]*block_realSize*zoom -(zoom-1)/2*block_realSize +y*block_realSize +borderWidth;
         }
     }
     for(let i=0;i<4;i++){
@@ -420,17 +422,17 @@ function drawTetrisBlock(x, y, colorIndex,bdr = borderOfTetrisBlock){
     }
 }
         //drawTetrisShape
-function drawTetrisShape(shapeIndex, shapeRotation, x, y){
+function drawTetrisShape(shapeIndex, shapeRotation, x, y, zoom=1){
     for(let i=0;i<shapes[shapeIndex][shapeRotation].length;i++){
         for(let j=0;j<shapes[shapeIndex][shapeRotation][i].length;j++){
             if(shapes[shapeIndex][shapeRotation][i][j] === 1){
-                drawTetrisBlock(x+j, y+i, shapeIndex);
+                drawTetrisBlock(x+j, y+i, shapeIndex, borderOfTetrisBlock, zoom);
             }}}
 }
         //drawTetrisShape_Border
 function drawTetrisShape_Border(){
-    //最外层if的条件不够完善,在突然停止生成时边框会延后消失
-    if(Date.now()-tetris_lastCreated < snack_timeInterval_move){
+    //最外层if的条件不够标准,且边框会延后消失,不过在常规状态下与标准算法的效果相差很小,而且更节省算力
+    if(Date.now()-tetris_lastCreated < snack_timeInterval_move*0.8){
         if(tetris_created.length<=0){return;}
 
         //找出最后创建的形状
@@ -470,7 +472,7 @@ function drawTetrisShape_Border(){
                         buffer.moveTo(x1*block_realSize+borderWidth,y1*block_realSize+borderWidth);
                         buffer.lineTo(x2*block_realSize+borderWidth,y2*block_realSize+borderWidth);
                         buffer.strokeStyle = shapeColors[lastCreatedShape[0]];
-                        buffer.lineWidth = borderWidth/1.2;
+                        buffer.lineWidth = borderWidth/1.1;
                         buffer.stroke();
                     }
 
@@ -498,7 +500,7 @@ function drawTetrisShape_Border(){
         //get TetrisShape on snack
 var tetris_lastCreated = Date.now();
 const tetris_timeInterval_create = 500;
-const tetris_animation_duration = 700;
+const tetris_animation_duration = 490;//这个参数好难调试啊!!!
 const tetris_createHistory = [0,0,0,0,0,0,0];
 const tetris_created = [];//[...,[shapeIndex,rotation,x,y,createdTime],...]
 function drawTetris(){
@@ -513,11 +515,11 @@ function drawTetris(){
             buffer.globalAlpha = past/fadeIn;
         }else if(past < tetris_animation_duration){
             buffer.globalAlpha = (tetris_animation_duration-past)/fadeOut;
-            zoom = 1-(tetris_animation_duration-past)/fadeOut;
+            zoom = (past/fadeOut)*1.4;
         }else if(past >= tetris_animation_duration){
             buffer.globalAlpha = 0;
         }
-        buffer.globalAlpha *= 0.7;
+        // buffer.globalAlpha *= 0.7;
         drawTetrisShape(tetris_created[i][0], tetris_created[i][1], tetris_created[i][2], tetris_created[i][3],zoom);
         buffer.globalAlpha = 1;
     }
@@ -590,7 +592,6 @@ function createTetris(){
     if(isNotCollide && isTimeToCreate){
         tetris_lastCreated = Date.now();
         const canCover = findShapesOnSnack();
-        console.log(canCover.length)
         if(canCover.length>0){
             const used = chooseShape(canCover);
             used.push(Date.now());
